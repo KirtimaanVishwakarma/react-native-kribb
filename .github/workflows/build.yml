@@ -41,6 +41,11 @@ jobs:
     needs: lint
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_KEY }}
+      # EXPO_PUBLIC_SUPABASE_PASSWORD: ${{ secrets.EXPO_PUBLIC_SUPABASE_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -78,6 +83,12 @@ jobs:
         run: |
           npx expo-modules-autolinking react-native-config --json --platform android > /dev/null
           echo "Autolinking OK"
+
+      - name: Diagnose Gradle configuration (temporary)
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew help --no-daemon --info --console=plain 2>&1 | tail -n 150
 
       - name: Build ${{ inputs.build_type }}
         working-directory: android
