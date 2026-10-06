@@ -74,14 +74,19 @@ jobs:
           echo "reactNativeArchitectures=arm64-v8a,armeabi-v7a" >> android/gradle.properties
           cat android/gradle.properties
 
+      - name: Debug autolinking (shows the real Node error)
+        run: |
+          npx expo-modules-autolinking react-native-config --json --platform android > /dev/null
+          echo "Autolinking OK"
+
       - name: Build ${{ inputs.build_type }}
         working-directory: android
         run: |
           chmod +x gradlew
           if [ "${{ inputs.build_type }}" = "aab" ]; then
-            ./gradlew bundleRelease --no-daemon
+            ./gradlew bundleRelease --no-daemon --console=plain --stacktrace
           else
-            ./gradlew assembleRelease --no-daemon
+            ./gradlew assembleRelease --no-daemon --console=plain --stacktrace
           fi
 
       - name: Upload ${{ inputs.build_type }} artifact
