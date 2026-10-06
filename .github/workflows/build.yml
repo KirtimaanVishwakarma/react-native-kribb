@@ -66,26 +66,28 @@ jobs:
       - name: Generate native Android project
         run: npx expo prebuild --platform android --no-install
 
-      - name: Build APK
-        if: inputs.build_type == 'apk'
+      - name: Configure Gradle memory and architectures
+        run: |
+          sed -i '/^org.gradle.jvmargs/d' android/gradle.properties
+          sed -i '/^reactNativeArchitectures/d' android/gradle.properties
+          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" >> android/gradle.properties
+          echo "reactNativeArchitectures=arm64-v8a,armeabi-v7a" >> android/gradle.properties
+          cat android/gradle.properties
+
+      - name: Build ${{ inputs.build_type }}
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
+          if [ "${{ inputs.build_type }}" = "aab" ]; then
+            ./gradlew bundleRelease --no-daemon
+          else
+            ./gradlew assembleRelease --no-daemon
+          fi
 
-      - name: Build AAB
-        if: inputs.build_type == 'aab'
-        working-directory: android
-        run: |
-          chmod +x gradlew
-          ./gradlew bundleRelease --no-daemon
-
-      - name: Upload build artifact
+      - name: Upload ${{ inputs.build_type }} artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-${{ inputs.build_type }}-build
-          path: |
-            android/app/build/outputs/apk/release/*.apk
-            android/app/build/outputs/bundle/release/*.aab
+          path: ${{ inputs.build_type == 'aab' && 'android/app/build/outputs/bundle/release/*.aab' || 'android/app/build/outputs/apk/release/*.apk' }}
           if-no-files-found: error
           retention-days: 14
