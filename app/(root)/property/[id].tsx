@@ -31,15 +31,26 @@ const PropertyDetails = () => {
     const authSupabase = useSupabase();
     const { isSaved, saveLoading, toggleSave } = useSavedProperties(id ?? "")
 
-    const fetchProperty = async () => {
-        const { data } = await supabase.from("properties").select("*").eq("id", id).single();
-        setProperty(data ?? null)
-        setLoading(false)
-    }
     useEffect(() => {
         if (!id) return;
-        fetchProperty()
-    }, [id])
+        let isMounted = true;
+
+        supabase
+            .from("properties")
+            .select("*")
+            .eq("id", id)
+            .single()
+            .then(({ data }) => {
+                if (isMounted) {
+                    setProperty(data ?? null);
+                    setLoading(false);
+                }
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [id]);
 
     const onscroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
         const index = Math.round(e.nativeEvent.contentOffset.x / width)

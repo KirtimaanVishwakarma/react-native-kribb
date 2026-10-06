@@ -36,12 +36,10 @@ const chipText = (active: boolean) =>
 
 const FilterModel = ({ visible, onClose }: { visible: boolean; onClose: () => void }) => {
     const {
-        search,
         type,
         bedrooms,
         maxPrice,
         minPrice,
-        setSearch,
         setType,
         setBedrooms,
         setMinPrice,

@@ -39,7 +39,7 @@ export default function SavedScreen() {
 
     setSaved((data as unknown as SavedProperty[]) ?? []);
     setLoading(false);
-  }, [userId]);
+  }, [userId, authSupabase]);
 
   // Refresh every time the tab comes into focus
   useFocusEffect(

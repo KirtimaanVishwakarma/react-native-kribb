@@ -11,15 +11,17 @@ import { FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 function SearchScreen() {
+  const { openFilters } = useLocalSearchParams<{ openFilters?: string }>()
   const [results, setResults] = useState<Property[]>([])
   const [loading, setLoading] = useState(false)
-  const [showFilter, setShowFilter] = useState(false)
-
-  const { openFilters } = useLocalSearchParams<{ openFilters?: string }>()
+  const [showFilter, setShowFilter] = useState(openFilters === "true")
 
   useEffect(() => {
     if (openFilters === "true") {
-      setShowFilter(true)
+      const timer = setTimeout(() => {
+        setShowFilter(true);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [openFilters])
   const {
@@ -36,39 +38,43 @@ function SearchScreen() {
   } = useFilterStore()
   const activeFilterCount = [type !== null, bedrooms !== null, minPrice !== null, maxPrice !== null].filter(Boolean).length;
 
-  const fetchResults = async () => {
-    setLoading(true);
+  useEffect(() => {
+    let isMounted = true;
+    const timer = setTimeout(() => {
+      if (isMounted) setLoading(true);
+    }, 0);
 
     let query = supabase.from("properties").select("*");
 
     if (search) {
-      query = query.or(`title.ilike.%${search}%,city.ilike.%${search}%`)
+      query = query.or(`title.ilike.%${search}%,city.ilike.%${search}%`);
     }
     if (type) {
-      query = query.eq("type", type)
+      query = query.eq("type", type);
     }
     if (bedrooms) {
-      query = query.eq("bedrooms", bedrooms)
+      query = query.eq("bedrooms", bedrooms);
     }
     if (minPrice) {
-      query = query.gte("price", minPrice)
+      query = query.gte("price", minPrice);
     }
     if (maxPrice) {
-      query = query.lte("price", maxPrice)
+      query = query.lte("price", maxPrice);
     }
 
-    const { data } = await query.order("created_at", { ascending: false })
-    setResults(data ?? [])
-    setLoading(false)
-  }
+    query.order("created_at", { ascending: false }).then(({ data }) => {
+      clearTimeout(timer);
+      if (isMounted) {
+        setResults(data ?? []);
+        setLoading(false);
+      }
+    });
 
-  useEffect(() => { fetchResults() }, [
-    search,
-    type,
-    bedrooms,
-    minPrice,
-    maxPrice
-  ])
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [search, type, bedrooms, minPrice, maxPrice])
 
 
   return (
